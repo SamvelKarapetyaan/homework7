@@ -1,26 +1,79 @@
 import argparse
 import joblib
+import json
 import pandas as pd
 
-# from model import Model
-# from preprocessor import Preprocessor
+from model import Model
+from preprocessor import Preprocessor
 
 
 class Pipeline:
-    def __init__(self,):
-        pass
-        # self.model = Model()
-        # self.preprocessor = Preprocessor()
+    """
+    Pipeline
+    =====================
+    The Pipeline class provides a way to preprocess and model data for training and testing. 
+    It has following method.
 
-    def run(self, X, test=False):
+     - run(data: pd.DataFrame, test: bool = False):
+    
+    Parameters:
+    ---------------------
+    1. data (pandas DataFrame): The input data to preprocess and model.
+    2. test (bool): If True, load the preprocessor and model from their saved files and use them to predict the output for the input data. Otherwise, fit the preprocessor and model to the input data and save them to their respective files for future testing.
+    
+    
+    Returns:
+    ---------------------
+    If test is True, a JSON file containing the predicted probabilities and threshold. Otherwise, nothing is returned.
+    The run method performs the following steps:
+
+    If test is True, the preprocessor and model are loaded from their saved files and used to predict the output for the input data. The predicted probabilities and threshold are saved to a JSON file.
+    Otherwise, the preprocessor is fit to the input data, then the data is transformed using the preprocessor and the transformed data is used to fit the model. Finally, the preprocessor and model are saved to their respective files.
+    Conclusion
+    The Pipeline class provides a convenient way to preprocess and model data for training and testing. By using this class, the user can easily preprocess the data, fit the model, and save the preprocessor and model for future testing.
+    """
+
+    def __init__(self):
+        # Initialize some parameters.
+        self.model_filename = "model.sav"
+        self.preprocessor_filename = "preprocessor.sav"
+        self.model = Model()
+        self.preprocessor = Preprocessor()
+
+    def run(self, data, test=False):
         if test:
-        # load preprocessor and model for testing
-        # save results to predictions.json file 
-            pass
+            # Model and Preprocessor loading process.
+            self.model = joblib.load(self.model_filename)
+            self.preprocessor = joblib.load(self.preprocessor_filename)
+
+            # Preprocessing and get predictions
+            X = self.preprocessor.transform(data)
+            
+            predictions = self.model.predict(X)[:, 1]
+            predictions = predictions.tolist()
+
+            threshold = self.model.threshold
+            # Make dictionaries for saving.
+            json_file = {
+                "predict_probas": predictions, 
+                "threshold": threshold
+            }
+
+            # Saving JSON file.
+            with open("predictions.json", "w") as f:
+                json.dump(json_file, f)
+
         else:
-        # call preprocessor and model for training
-        # save preprocessor and model for future testing
-            pass
+            # Preprocessor and model fitting.
+            self.preprocessor.fit(data)
+
+            X, y = self.preprocessor.transform(data)
+
+            self.model.fit(X, y)
+
+            # Saving fitted model and preprocessor.
+            joblib.dump(self.model, self.model_filename)
+            joblib.dump(self.preprocessor, self.preprocessor_filename)
 
 
 def main():
@@ -69,15 +122,8 @@ def main():
     DataFrame = pd.read_csv(path_of_data)
     # ========================================================
 
-
-    # Import best model
-    best_model = "<file>.sav"
-    
-    load_model = joblib.load(best_model)
-
-
     pipeline = Pipeline()
-    pipeline.run(best_model, test=test_mode)
+    pipeline.run(DataFrame , test=test_mode)
 
 
 
