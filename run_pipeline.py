@@ -35,9 +35,11 @@ class Pipeline:
 
     def __init__(self):
         # Initialize some parameters.
-        self.model_filename = "model.sav"
-        self.preprocessor_filename = "preprocessor.sav"
-        self.model = Model()
+        self.model_filename = "model.sav" # Test mode
+        self.preprocessor_filename = "preprocessor.sav" # Test mode
+        self.model_name = "SVC" # Best model
+
+        self.model = Model(self.model_name)
         self.preprocessor = Preprocessor()
 
     def run(self, data, test=False):
@@ -96,18 +98,19 @@ def main():
         description="""
         It defines two arguments that can be passed to the program:
 
-        1. "--data_path": a required argument of type 
-            string that specifies the path to the data file.
+        1. "--data_path": a required argument that 
+            specifies the path to the data file.
 
-        2. "--inference": an optional argument of type string 
+        2. "--inference": an optional argument of type bool 
             that activates test mode if set to "True".
         """,    
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
 
     # Add --data_path and --inference arguments to parser
-    parser.add_argument("--data_path", type=str, help="Path to data file.", required=True)
-    parser.add_argument("--inference", type=str, help="Test mode activation", required=False, default=False)
+    parser.add_argument("--data_path", help="Path to data file.", required=True)
+    parser.add_argument("--inference", help="Test mode activation.", required=False, default=False)
+    parser.add_argument("--model", help="Training model", required=False, default="best")
 
     # --inference -> default = False.
     # By default activates train mode.
@@ -119,13 +122,18 @@ def main():
 
     path_of_data = args.data_path
     test_mode = args.inference not in possible_falses
+    model = args.model
  
+    valid_models = ["DecisionTreeClassifier", "GaussianNB", "KNearestNeighbors", "SVC"] # temporary ...
+
+    if model not in valid_models:
+        raise ValueError(f"Model must be from given list: {valid_models}")
 
     # Reading CSV file
     DataFrame = pd.read_csv(path_of_data)
 
     # Pipeline running
-    pipeline = Pipeline()
+    pipeline = Pipeline(model)
     pipeline.run(DataFrame , test=test_mode)
 
 
