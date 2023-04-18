@@ -123,6 +123,8 @@ def main():
     DataFrame = pd.read_csv(path_of_data)
 
 
+
+    # Pipeline running
     # Pipeline running
     pipeline = Pipeline()
     pipeline.run(DataFrame , test=test_mode)
