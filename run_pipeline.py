@@ -114,14 +114,13 @@ def main():
     # Get arguments as dictionary from parser
     args = parser.parse_args() # {"<argument_name>": "value", ...}
 
-    # ========================================================
-
     path_of_data = args.data_path
     test_mode = args.inference
  
     DataFrame = pd.read_csv(path_of_data)
-    # ========================================================
 
+
+    # Pipeline running
     pipeline = Pipeline()
     pipeline.run(DataFrame , test=test_mode)
 
