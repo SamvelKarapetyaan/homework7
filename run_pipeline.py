@@ -53,6 +53,7 @@ class Pipeline:
             predictions = predictions.tolist()
 
             threshold = self.model.threshold
+
             # Make dictionaries for saving.
             json_file = {
                 "predict_probas": predictions, 
@@ -112,16 +113,17 @@ def main():
     # By default activates train mode.
 
     # Get arguments as dictionary from parser
-    args = parser.parse_args() # {"<argument_name>": "value", ...}
+    args = parser.parse_args() # returns dictionary-like object
 
-    # ========================================================
+    possible_falses = ["0", "false", "False"]
 
     path_of_data = args.data_path
-    test_mode = args.inference
+    test_mode = args.inference not in possible_falses
  
     DataFrame = pd.read_csv(path_of_data)
-    # ========================================================
 
+
+    # Pipeline running
     pipeline = Pipeline()
     pipeline.run(DataFrame , test=test_mode)
 
