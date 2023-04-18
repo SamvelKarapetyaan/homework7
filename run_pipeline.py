@@ -120,6 +120,8 @@ def main():
     path_of_data = args.data_path
     test_mode = args.inference not in possible_falses
  
+
+    # Reading CSV file
     DataFrame = pd.read_csv(path_of_data)
 
     # Pipeline running
