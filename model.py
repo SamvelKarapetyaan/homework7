@@ -1,6 +1,8 @@
 from sklearn.tree import DecisionTreeClassifier
 
 class Model:
+    valid_algorithms = ["KNN", "GaussianNB"]
+
     def __init__(self):
         self.model = DecisionTreeClassifier()
         self.threshold = 0.5

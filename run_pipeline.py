@@ -1,3 +1,4 @@
+# TODO: requirements.txt
 import argparse
 import joblib
 import json
@@ -12,37 +13,66 @@ class Pipeline:
     Pipeline
     =====================
     The Pipeline class provides a way to preprocess and model data for training and testing. 
-    It has following method.
 
-     - run(data: pd.DataFrame, test: bool = False):
-    
     Parameters:
     ---------------------
-    1. data (pandas DataFrame): The input data to preprocess and model.
-    2. test (bool): If True, load the preprocessor and model from their saved files and use them to predict the output for the input data. Otherwise, fit the preprocessor and model to the input data and save them to their respective files for future testing.
-    
-    
-    Returns:
-    ---------------------
-    If test is True, a JSON file containing the predicted probabilities and threshold. Otherwise, nothing is returned.
-    The run method performs the following steps:
+    algorithm (str): The name of the algorithm to use for modeling.
 
-    If test is True, the preprocessor and model are loaded from their saved files and used to predict the output for the input data. The predicted probabilities and threshold are saved to a JSON file.
-    Otherwise, the preprocessor is fit to the input data, then the data is transformed using the preprocessor and the transformed data is used to fit the model. Finally, the preprocessor and model are saved to their respective files.
-    Conclusion
-    The Pipeline class provides a convenient way to preprocess and model data for training and testing. By using this class, the user can easily preprocess the data, fit the model, and save the preprocessor and model for future testing.
+    Attributes:
+    ---------------------
+    model_filename (str): The filename for saving the model in test mode.
+    preprocessor_filename (str): The filename for saving the preprocessor in test mode.
+    predictions_filename (str): The filename for saving the predictions in test mode.
+    model (Model): The model object.
+    preprocessor (Preprocessor): The preprocessor object.
+
+    Methods:
+    ---------------------
+    run(data: pd.DataFrame, test: bool = False):
+        Preprocesses and models the input data.
+
+        Parameters:
+        ---------------------
+        data (pandas DataFrame): The input data to preprocess and model.
+        test (bool): If True, load the preprocessor and model from their saved files and 
+            use them to predict the output for the input data. Otherwise, fit the preprocessor 
+            and model to the input data and save them to their respective files for future testing.
+
+        Returns:
+        ---------------------
+        If test is True, a JSON file containing the predicted probabilities and threshold. Otherwise, nothing is returned.
     """
 
-    def __init__(self):
-        # Initialize some parameters.
+    def __init__(self, algorithm):
+        """
+        Initializes the Pipeline class.
+
+        Parameters:
+        ---------------------
+        algorithm (str): The name of the algorithm to use for modeling.
+        """
         self.model_filename = "model.sav" # Test mode
         self.preprocessor_filename = "preprocessor.sav" # Test mode
-        self.model_name = "SVC" # Best model
+        self.predictions_filename = "predictions.json"
 
-        self.model = Model(self.model_name)
+        self.model = Model(algorithm)
         self.preprocessor = Preprocessor()
 
     def run(self, data, test=False):
+        """
+        Preprocesses and models the input data.
+
+        Parameters:
+        ---------------------
+        data (pandas DataFrame): The input data to preprocess and model.
+        test (bool): If True, load the preprocessor and model from their saved files and use them 
+            to predict the output for the input data. Otherwise, fit the preprocessor and model to 
+            the input data and save them to their respective files for future testing.
+
+        Returns:
+        ---------------------
+        If test is True, a JSON file containing the predicted probabilities and threshold. Otherwise, nothing is returned.
+        """
         if test:
             # Model and Preprocessor loading process.
             self.model = joblib.load(self.model_filename)
@@ -51,7 +81,10 @@ class Pipeline:
             # Preprocessing and get predictions
             X = self.preprocessor.transform(data)
             
+            # TODO:
             predictions = self.model.predict(X)[:, 1]
+            # PREDICTIONS
+            
             predictions = predictions.tolist()
 
             threshold = self.model.threshold
@@ -63,7 +96,7 @@ class Pipeline:
             }
 
             # Saving JSON file.
-            with open("predictions.json", "w") as f:
+            with open(self.predictions_filename, "w") as f:
                 json.dump(json_file, f)
 
         else:
@@ -110,10 +143,9 @@ def main():
     # Add --data_path and --inference arguments to parser
     parser.add_argument("--data_path", help="Path to data file.", required=True)
     parser.add_argument("--inference", help="Test mode activation.", required=False, default=False)
-    parser.add_argument("--model", help="Training model", required=False, default="best")
+    parser.add_argument("--model", help="Training model", required=False, default="Best") # TODO: "Best" must be changed
 
-    # --inference -> default = False.
-    # By default activates train mode.
+    # --inference -> default = False. Default activates train mode.
 
     # Get arguments as dictionary from parser
     args = parser.parse_args() # returns dictionary-like object
@@ -124,10 +156,11 @@ def main():
     test_mode = args.inference not in possible_falses
     model = args.model
  
-    valid_models = ["DecisionTreeClassifier", "GaussianNB", "KNearestNeighbors", "SVC"] # temporary ...
-
-    if model not in valid_models:
-        raise ValueError(f"Model must be from given list: {valid_models}")
+    # TODO: This job must be in model.py
+    if model:
+        if model not in Model.valid_algorithms:
+            raise ValueError(f"Model must be from given list: {Model.valid_algorithms}")
+    # ...
 
     # Reading CSV file
     DataFrame = pd.read_csv(path_of_data)
@@ -135,7 +168,6 @@ def main():
     # Pipeline running
     pipeline = Pipeline(model)
     pipeline.run(DataFrame , test=test_mode)
-
 
 
 if __name__ == "__main__":
