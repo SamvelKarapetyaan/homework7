@@ -1,12 +1,6 @@
 import numpy as np
 import pandas as pd
 
-df=pd.read_csv(r'hospital_deaths_train.csv')
-n_array=df.to_numpy()
-n_array
-
-
-
 class Preprocessor:
     def __init__(self):
         self.column_means = None
@@ -35,7 +29,3 @@ class Preprocessor:
     def fit_transform(self, X):
         self.fit(X)
         return self.transform(X)
-
-pre = Preprocessor()
-pre.fit(n_array)
-print(pre.transform(n_array))
