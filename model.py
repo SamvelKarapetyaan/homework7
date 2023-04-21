@@ -21,6 +21,19 @@ class Model:
         :param algorithm: str - the name of the algorithm to use
         """
         # store the input algorithm name
+
+        ##################################
+        # Checking validation, MAY BE CHANGED
+        if algorithm == None:
+            algorithm = "SVC"
+        elif algorithm not in Model.valid_name:
+            raise ValueError(f"Model must be from given list: {Model.valid_name}")
+        
+
+        # threshold initialization
+        self.threshold = 0.5 # Must be changed
+        ##################################
+
         self.algorithm = algorithm
 
         # define a dictionary of classifier algorithms with their respective hyperparameters for GridSearchCV
