@@ -11,6 +11,7 @@ import numpy as np
 from sklearn.metrics import roc_curve
 
 
+
 class Model:
     """
     A class for classification using various machine learning algorithms.
