@@ -27,8 +27,13 @@ class Model:
 
         :param algorithm: str - the name of the algorithm to use
         """
+        
+        if algorithm not in Model.valid_name:
+            raise ValueError(f"Not valid algorithm. Use: {Model.valid_name}")
+
         # store the input algorithm name
         self.algorithm = algorithm
+
 
         # define a dictionary of classifier algorithms with their respective hyperparameters for GridSearchCV
         self.classifiers = {
