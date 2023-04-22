@@ -54,6 +54,7 @@ class Pipeline:
         self.model_filename = "model.sav" # Test mode
         self.preprocessor_filename = "preprocessor.sav" # Test mode
         self.predictions_filename = "predictions.json"
+        self.target_column = "In-hospital_death"
 
         self.model = Model(algorithm)
         self.preprocessor = Preprocessor()
@@ -82,8 +83,7 @@ class Pipeline:
             X = self.preprocessor.transform(data)
             
             # Get probabilties and best threshold
-            print(X.columns)
-            predictions = self.model.predict_proba(X)[:, 1]
+            predictions = self.model.predict_proba(X)
             
             predictions = predictions.tolist()
 
@@ -92,7 +92,7 @@ class Pipeline:
             # Make dictionaries for saving.
             json_file = {
                 "predict_probas": predictions, 
-                "threshold": threshold
+                "threshold": threshold,
             }
 
             # Saving JSON file.
@@ -100,11 +100,15 @@ class Pipeline:
                 json.dump(json_file, f)
 
         else:
+            # Separation of data and target
+            X = data.drop(self.target_column, axis=1)
+            y = data[self.target_column]
+
             # Preprocessor and model fitting.
-            self.preprocessor.fit(data)
+            self.preprocessor.fit(X)
+            X = self.preprocessor.transform(X)
 
-            X, y = self.preprocessor.transform(data)
-
+            # Model fitting
             self.model.fit(X, y)
 
             # Saving fitted model and preprocessor.
@@ -143,7 +147,7 @@ def main():
     # Add --data_path and --inference arguments to parser
     parser.add_argument("--data_path", help="Path to data file.", required=True)
     parser.add_argument("--inference", help="Test mode activation.", required=False, default=False)
-    parser.add_argument("--algorithm", help="Training model", required=False, default=None)
+    parser.add_argument("--algorithm", help="Training model", required=False, default="GBoost")
 
     # --inference -> default = False. Default activates train mode.
 

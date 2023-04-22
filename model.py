@@ -9,7 +9,7 @@ from sklearn.svm import SVC
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis, QuadraticDiscriminantAnalysis
 import numpy as np
 from sklearn.metrics import roc_curve
-
+from imblearn.over_sampling import RandomOverSampler
 
 
 class Model:
@@ -69,31 +69,41 @@ class Model:
             })
         }
 
+        self.threshold = None
+
     def fit(self, X, y):
         # Get the classifier and parameter grid based on the algorithm name
         clf, params = self.classifiers[self.algorithm]
         # Perform grid search to find the best hyperparameters
-        grid_search = GridSearchCV(clf, param_grid=params, cv=5, scoring='recall', n_jobs=4)
-        grid_search.fit(X, y)
+        grid_search = GridSearchCV(clf, param_grid=params, cv=5, scoring='f1', n_jobs=4)
+
+        ros = RandomOverSampler()
+        X_resampled, y_resampled = ros.fit_resample(X, y)
+
+        # grid_search.fit(X_resampled, y_resampled)
         # Set the algorithm attribute to the best estimator found by grid search
-        self.algorithm = grid_search.best_estimator_
+        # self.best_model = grid_search.best_estimator_
+        self.best_model = clf
+        self.best_model.fit(X_resampled, y_resampled)
+
+        self.threshold = self.get_threshold(X_resampled, y_resampled)
 
     def predict(self, X_test):
         # Use the fitted model to make predictions on new data
-        return self.algorithm.predict(X_test)
+        return self.best_model.predict(X_test)
 
     def predict_proba(self, X_test):
         # Use the fitted model to make predictions probability on new data
-        return self.algorithm.predict_proba(X_test)[:, 1]
+        return self.best_model.predict_proba(X_test)[:, 1]
 
     def score(self, X_test, y_test):
         # Calculate the score (Accuracy)
-        return self.algorithm.score(X_test, y_test)
+        return self.best_model.score(X_test, y_test)
 
-    def threshold(self, x_train, y_train):
+    def get_threshold(self, x_train, y_train):
         y_pred = self.predict_proba(x_train)
         fpr, tpr, thresholds = roc_curve(y_train, y_pred)
-        roc_distances = np.sqrt(np.sum(np.square(1 - tpr) + np.square(fpr)))
+        roc_distances = np.square(1 - tpr) + np.square(fpr)
         best_threshold_index = np.argmin(roc_distances)
-        return thresholds[best_threshold_index]
+        return float(thresholds[best_threshold_index])
 
