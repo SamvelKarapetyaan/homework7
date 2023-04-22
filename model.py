@@ -6,11 +6,17 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import AdaBoostClassifier
 from xgboost import XGBClassifier, XGBRFClassifier
 from sklearn.svm import SVC
-import pandas as pd
-from sklearn.metrics import roc_auc_score, confusion_matrix
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis, QuadraticDiscriminantAnalysis
+import numpy as np
+from sklearn.metrics import roc_curve
+
 
 class Model:
+    """
+    A class for classification using various machine learning algorithms.
+    It provides the methods written in valid_name:
+
+    """
     # define a list of valid model names
     valid_name = ['Logistic', 'NB', 'KNN', 'Tree', 'AdaBoost', 'GBoost', 'RandomForest', 'SVC', 'LDA', 'QDA']
 
@@ -21,24 +27,11 @@ class Model:
         :param algorithm: str - the name of the algorithm to use
         """
         # store the input algorithm name
-
-        ##################################
-        # Checking validation, MAY BE CHANGED
-        if algorithm == None:
-            algorithm = "SVC"
-        elif algorithm not in Model.valid_name:
-            raise ValueError(f"Model must be from given list: {Model.valid_name}")
-        
-
-        # threshold initialization
-        self.threshold = 0.5 # Must be changed
-        ##################################
-
         self.algorithm = algorithm
 
         # define a dictionary of classifier algorithms with their respective hyperparameters for GridSearchCV
         self.classifiers = {
-            "Logistic": (LogisticRegression(max_iter=100000), {
+            "Logistic": (LogisticRegression(max_iter=100000, class_weight='balanced'), {
                 'C': [0.1, 10, 11, 9]
             }),
             "NB": (GaussianNB(), {
@@ -49,24 +42,24 @@ class Model:
                 'weights': ['uniform', 'distance'],
                 'leaf_size': [10, 20]
             }),
-            "Tree": (DecisionTreeClassifier(), {
+            "Tree": (DecisionTreeClassifier(class_weight='balanced'), {
                 'max_depth': [100, 150, 200]
             }),
             "AdaBoost": (AdaBoostClassifier(), {
                 'n_estimators': [200, 250],
                 'learning_rate': [0.5, 1.0]
             }),
-            "GBoost": (XGBClassifier(), {
+            "GBoost": (XGBClassifier(class_weight='balanced'), {
                 'n_estimators': [100, 200],
                 'max_depth': [3, 5],
                 'colsample_bytree': [0.5, 1.0]
             }),
-            "RandomForest": (XGBRFClassifier(), {
+            "RandomForest": (XGBRFClassifier(class_weight='balanced'), {
                 'n_estimators': [100, 200],
                 'max_depth': [3, 7],
                 'learning_rate': [0.1, 0.5]
             }),
-            "SVC": (SVC(probability=True), {
+            "SVC": (SVC(probability=True, class_weight='balanced'), {
                 'C': [1, 10],
                 'kernel': ['poly', 'rbf']
             }),
@@ -77,6 +70,7 @@ class Model:
                 'reg_param': [0.0, 0.001, 0.5]
             })
         }
+
     def fit(self, X, y):
         # Get the classifier and parameter grid based on the algorithm name
         clf, params = self.classifiers[self.algorithm]
@@ -92,8 +86,16 @@ class Model:
 
     def predict_proba(self, X_test):
         # Use the fitted model to make predictions probability on new data
-        return self.algorithm.predict_proba(X_test)
+        return self.algorithm.predict_proba(X_test)[:, 1]
 
     def score(self, X_test, y_test):
         # Calculate the score (Accuracy)
         return self.algorithm.score(X_test, y_test)
+
+    def threshold(self, x_train, y_train):
+        y_pred = self.predict_proba(x_train)
+        fpr, tpr, thresholds = roc_curve(y_train, y_pred)
+        roc_distances = np.sqrt(np.sum(np.square(1 - tpr) + np.square(fpr)))
+        best_threshold_index = np.argmin(roc_distances)
+        return thresholds[best_threshold_index]
+
