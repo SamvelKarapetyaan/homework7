@@ -3,10 +3,13 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import AdaBoostClassifier
+from sklearn.ensemble import AdaBoostClassifier, GradientBoostingClassifier
 from xgboost import XGBClassifier, XGBRFClassifier
 from sklearn.svm import SVC
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis, QuadraticDiscriminantAnalysis
+import numpy as np
+from sklearn.metrics import roc_curve
+
 
 
 class Model:
@@ -47,11 +50,8 @@ class Model:
                 'n_estimators': [200, 250],
                 'learning_rate': [0.5, 1.0]
             }),
-            "GBoost": (XGBClassifier(class_weight='balanced'), {
-                'n_estimators': [100, 200],
-                'max_depth': [3, 5],
-                'colsample_bytree': [0.5, 1.0]
-            }),
+            "GBoost": (GradientBoostingClassifier(random_state = 42), {}),
+            
             "RandomForest": (XGBRFClassifier(class_weight='balanced'), {
                 'n_estimators': [100, 200],
                 'max_depth': [3, 7],
@@ -90,10 +90,10 @@ class Model:
         # Calculate the score (Accuracy)
         return self.algorithm.score(X_test, y_test)
 
-    def threshold(self, x_train, y_train):
+    def get_threshold(self, x_train, y_train):
         y_pred = self.predict_proba(x_train)
         fpr, tpr, thresholds = roc_curve(y_train, y_pred)
-        roc_distances = np.sqrt(np.sum(np.square(1 - tpr) + np.square(fpr)))
+        roc_distances = np.square(1 - tpr) + np.square(fpr)
         best_threshold_index = np.argmin(roc_distances)
-        return thresholds[best_threshold_index]
+        return float(thresholds[best_threshold_index])
 
