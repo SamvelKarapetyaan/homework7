@@ -3,7 +3,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import AdaBoostClassifier
+from sklearn.ensemble import AdaBoostClassifier, GradientBoostingClassifier
 from xgboost import XGBClassifier, XGBRFClassifier
 from sklearn.svm import SVC
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis, QuadraticDiscriminantAnalysis
@@ -50,11 +50,8 @@ class Model:
                 'n_estimators': [200, 250],
                 'learning_rate': [0.5, 1.0]
             }),
-            "GBoost": (XGBClassifier(class_weight='balanced'), {
-                'n_estimators': [100, 200],
-                'max_depth': [3, 5],
-                'colsample_bytree': [0.5, 1.0]
-            }),
+            "GBoost": (GradientBoostingClassifier(random_state = 42), {}),
+            
             "RandomForest": (XGBRFClassifier(class_weight='balanced'), {
                 'n_estimators': [100, 200],
                 'max_depth': [3, 7],
