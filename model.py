@@ -6,11 +6,15 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import AdaBoostClassifier
 from xgboost import XGBClassifier, XGBRFClassifier
 from sklearn.svm import SVC
-import pandas as pd
-from sklearn.metrics import roc_auc_score, confusion_matrix
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis, QuadraticDiscriminantAnalysis
 
+
 class Model:
+    """
+    A class for classification using various machine learning algorithms.
+    It provides the methods written in valid_name:
+
+    """
     # define a list of valid model names
     valid_name = ['Logistic', 'NB', 'KNN', 'Tree', 'AdaBoost', 'GBoost', 'RandomForest', 'SVC', 'LDA', 'QDA']
 
@@ -25,7 +29,7 @@ class Model:
 
         # define a dictionary of classifier algorithms with their respective hyperparameters for GridSearchCV
         self.classifiers = {
-            "Logistic": (LogisticRegression(max_iter=100000), {
+            "Logistic": (LogisticRegression(max_iter=100000, class_weight='balanced'), {
                 'C': [0.1, 10, 11, 9]
             }),
             "NB": (GaussianNB(), {
@@ -36,24 +40,24 @@ class Model:
                 'weights': ['uniform', 'distance'],
                 'leaf_size': [10, 20]
             }),
-            "Tree": (DecisionTreeClassifier(), {
+            "Tree": (DecisionTreeClassifier(class_weight='balanced'), {
                 'max_depth': [100, 150, 200]
             }),
             "AdaBoost": (AdaBoostClassifier(), {
                 'n_estimators': [200, 250],
                 'learning_rate': [0.5, 1.0]
             }),
-            "GBoost": (XGBClassifier(), {
+            "GBoost": (XGBClassifier(class_weight='balanced'), {
                 'n_estimators': [100, 200],
                 'max_depth': [3, 5],
                 'colsample_bytree': [0.5, 1.0]
             }),
-            "RandomForest": (XGBRFClassifier(), {
+            "RandomForest": (XGBRFClassifier(class_weight='balanced'), {
                 'n_estimators': [100, 200],
                 'max_depth': [3, 7],
                 'learning_rate': [0.1, 0.5]
             }),
-            "SVC": (SVC(probability=True), {
+            "SVC": (SVC(probability=True, class_weight='balanced'), {
                 'C': [1, 10],
                 'kernel': ['poly', 'rbf']
             }),
@@ -64,6 +68,7 @@ class Model:
                 'reg_param': [0.0, 0.001, 0.5]
             })
         }
+
     def fit(self, X, y):
         # Get the classifier and parameter grid based on the algorithm name
         clf, params = self.classifiers[self.algorithm]
@@ -79,54 +84,16 @@ class Model:
 
     def predict_proba(self, X_test):
         # Use the fitted model to make predictions probability on new data
-        return self.algorithm.predict_proba(X_test)
+        return self.algorithm.predict_proba(X_test)[:, 1]
 
     def score(self, X_test, y_test):
         # Calculate the score (Accuracy)
         return self.algorithm.score(X_test, y_test)
 
+    def threshold(self, x_train, y_train):
+        y_pred = self.predict_proba(x_train)
+        fpr, tpr, thresholds = roc_curve(y_train, y_pred)
+        roc_distances = np.sqrt(np.sum(np.square(1 - tpr) + np.square(fpr)))
+        best_threshold_index = np.argmin(roc_distances)
+        return thresholds[best_threshold_index]
 
-# ploting the scores in a matrix
-def print_metrics(tp, fp, tn, fn):
-    accuracy = (tp + tn) / (tp + tn + fn + fp)
-    precision = tp / (tp + fp)
-    recall = tp / (tp + fn)
-    specificity = tn / (tn + fp)
-    f1_score = tp / (tp + (fp + fn) / 2)
-    return accuracy, precision, recall, specificity, f1_score
-
-
-# Define the algorithms to evaluate
-models = ['LogisticRegression', 'GaussianNB', 'KNeighborsClassifier', 'DecisionTreeClassifier', 'AdaBoostClassifier',
-          'XGBClassifier', 'XGBRFClassifier', 'SVC', 'LinearDiscriminantAnalysis', 'QuadraticDiscriminantAnalysis']
-
-# Define an empty dictionary to store the evaluation metrics for each algorithm
-results = {'Algorithm': [], 'Accuracy': [], 'Precision': [], 'Recall': [], 'Specificity': [], 'F1-Score': [], 'AUC': []}
-
-# Evaluate each algorithm
-for model in models:
-    clf = Model(model)
-    clf.fit(X_train_resampled, y_train_resampled)
-    y_pred = clf.predict(xtest)
-
-    # Calculate evaluation metrics
-    tn, fp, fn, tp = confusion_matrix(ytest, y_pred).ravel()
-    Accuracy, Precision, Recall, Specificity, F1_Score = print_metrics(tp, fp, tn, fn)
-    auc = roc_auc_score(ytest, clf.predict_proba(xtest)[:, 1])
-
-    # Store the evaluation metrics in the results dictionary
-    results['Algorithm'].append(model)
-    results['Accuracy'].append(Accuracy)
-    results['Precision'].append(Precision)
-    results['Recall'].append(Recall)
-    results['Specificity'].append(Specificity)
-    results['F1-Score'].append(F1_Score)
-    results['AUC'].append(auc)
-
-# Convert the results dictionary to a DataFrame
-results_df = pd.DataFrame(results)
-
-# Set the algorithm name as the index
-results_df.set_index('Algorithm', inplace=True)
-
-print(results_df)
