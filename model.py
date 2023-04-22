@@ -90,10 +90,10 @@ class Model:
         # Calculate the score (Accuracy)
         return self.algorithm.score(X_test, y_test)
 
-    def threshold(self, x_train, y_train):
+    def get_threshold(self, x_train, y_train):
         y_pred = self.predict_proba(x_train)
         fpr, tpr, thresholds = roc_curve(y_train, y_pred)
-        roc_distances = np.sqrt(np.sum(np.square(1 - tpr) + np.square(fpr)))
+        roc_distances = np.square(1 - tpr) + np.square(fpr)
         best_threshold_index = np.argmin(roc_distances)
-        return thresholds[best_threshold_index]
+        return float(thresholds[best_threshold_index])
 
