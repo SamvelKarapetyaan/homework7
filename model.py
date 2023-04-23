@@ -37,7 +37,7 @@ class Model:
 
         # define a dictionary of classifier algorithms with their respective hyperparameters for GridSearchCV
         self.classifiers = {
-            "Logistic": (LogisticRegression(max_iter=100000, class_weight='balanced'), {
+            "Logistic": (LogisticRegression(max_iter=100000, class_weight='balanced', random_state=1), {
                 'C': [0.1, 10, 11, 9]
             }),
             "NB": (GaussianNB(), {
@@ -48,21 +48,21 @@ class Model:
                 'weights': ['uniform', 'distance'],
                 'leaf_size': [10, 20]
             }),
-            "Tree": (DecisionTreeClassifier(class_weight='balanced'), {
+            "Tree": (DecisionTreeClassifier(class_weight='balanced', random_state=1), {
                 'max_depth': [100, 150, 200]
             }),
-            "AdaBoost": (AdaBoostClassifier(), {
+            "AdaBoost": (AdaBoostClassifier(random_state=1), {
                 'n_estimators': [200, 250],
                 'learning_rate': [0.5, 1.0]
             }),
-            "GBoost": (GradientBoostingClassifier(random_state = 42), {}),
+            "GBoost": (GradientBoostingClassifier(random_state = 1), {}),
             
             "RandomForest": (XGBRFClassifier(class_weight='balanced'), {
                 'n_estimators': [100, 200],
                 'max_depth': [3, 7],
                 'learning_rate': [0.1, 0.5]
             }),
-            "SVC": (SVC(probability=True, class_weight='balanced'), {
+            "SVC": (SVC(probability=True, random_state=1, class_weight='balanced'), {
                 'C': [1, 10],
                 'kernel': ['poly', 'rbf']
             }),
@@ -85,10 +85,10 @@ class Model:
         ros = RandomOverSampler()
         X_resampled, y_resampled = ros.fit_resample(X, y)
 
-        # grid_search.fit(X_resampled, y_resampled)
+        grid_search.fit(X_resampled, y_resampled)
         # Set the algorithm attribute to the best estimator found by grid search
-        # self.best_model = grid_search.best_estimator_
-        self.best_model = clf
+        self.best_model = grid_search.best_estimator_
+
         self.best_model.fit(X_resampled, y_resampled)
 
         self.threshold = self.get_threshold(X_resampled, y_resampled)
